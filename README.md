@@ -1,16 +1,36 @@
-## Image Overlay
-A mod for Cities: Skylines 2.  Available for download only on [Paradox Mods](https://mods.paradoxplaza.com/mods/74539/Windows).
+## Image Overlay (fork)
+This is a fork of [algernon-A/ImageOverlay](https://github.com/algernon-A/ImageOverlay) for Cities: Skylines 2.
 
-The primary platform for support is the [Cities Skylines Modding Discord](https://discord.gg/HTav7ARPs2).
+### Changes in this fork
 
-## Description
+#### Terrain-conforming overlay (rendering overhaul)
+The original mod projected the overlay onto a flat plane at a fixed elevation. On uneven terrain this caused the image to float above hills or clip into valleys.
+
+This fork replaces the flat plane with a **terrain-conforming mesh**: a 64×64 grid where each vertex is placed at the actual terrain height sampled from the game's `TerrainSystem`. The overlay now drapes onto the landscape like a sticker — following every hill, slope and valley.
+
+Additional rendering improvements:
+- Vertices are generated in local space (relative to the overlay centre) to eliminate floating-point precision drift that made the image slide when rotating the camera over large world coordinates.
+- Image rotation is baked into UV coordinates so the mesh stays world-axis-aligned while the projected image rotates.
+
+#### Overlay lock
+A new **Overlay lock** section in the settings panel:
+
+| Control | Description |
+|---|---|
+| **Lock overlay position** (toggle) | Disables all keyboard shortcuts for moving, rotating and resizing the overlay, preventing accidental nudges. **Ctrl+O** (show/hide) continues to work while locked. |
+| **Snap to terrain and lock** (button) | Resets the elevation offset to zero so the overlay sits flush at terrain level, then locks it in one click. |
+
+#### Turkish localisation (tr-TR)
+Full Turkish translation added for all UI strings including the new lock feature.
+
+---
+
+## Original description
 A simple mod to **Overlay an image on the game map**.
 
 Includes the ability to quickly and easily select and change between different images for the overlay.  The size, position, rotation, and transparency of the overlay can also be adjusted.
 
 Works both in-game and in the editor.
-
-Requested by AmiPolizeiFunk to assist with map creation and real-life city recreation.
 
 ## Instructions
 ### Selecting the overlay files
@@ -22,26 +42,26 @@ Requested by AmiPolizeiFunk to assist with map creation and real-life city recre
 ### Displaying the overlay
 - Press **Control-O** to activate the overlay. Press **Control-O** again to hide it.  There may be a slight pause in the game on the first activation as the image file is loaded.
 - The overlay will be automatically scaled to the vanilla playable area size (14 336m per side) and will be centred around middle of the map.
-- The overlay is projected onto a flat and level plane at the elevation you set.  By default the overlay will still be visible if the plane is underneath the terrain, but this can be disabled in the options panel if you want to only show the overlay where it is above the terrain.
- 
+- The overlay now drapes onto the terrain surface. Use **Snap to terrain and lock** in the settings panel to pin it to exact terrain level in one click.
+
 ### Repositioning the overlay
-- Press **Control-PageUp** and **Control-PageDown** to raise or lower the level of the overlay.
-- To rotate the overlay, press **Control-.** (period) or **Control-,** (comma) to rotate 1 degree at a time, or press **Control-Shift** to rotate 90 degrees at a time.
-- To move the overlay horizontally, use the **arrow keys** with either **Control** (move 1m at a time) or **Shift** (move 10m at a time).
+- Press **Control-PageUp** and **Control-PageDown** to raise or lower the elevation offset of the overlay.
+- To rotate the overlay, press **Control-.** (period) or **Control-,** (comma) to rotate 1 degree at a time, or **Control-Shift-.** / **Control-Shift-,** to rotate 90 degrees at a time.
+- To move the overlay horizontally, use the **arrow keys** with either **Control** (move 1m at a time) or **Control-Shift** (move 10m at a time).
 - You can also use the sliders in the settings panel to change the position, elevation, and rotation.
+- Enable **Lock overlay position** in the settings panel to prevent accidental movement.
 
 ### Resizing the overlay
 - Press **Control-Minus** and **Control-Equals** to shrink or expand the size of the overlay.
-- For large adjustments you can use the slider in the settings panel (you can use this to easily expand the overlay to cover the entire background terrain).
+- For large adjustments use the slider in the settings panel.
 
 ### Changing the overlay's transparency
 - Use the slider in the settings panel to change the overlay's transparency. 0% (default) is fully opaque and 100% is fully transparent (invisible).
 
 ## Meta
 ### Translations
-This mod supports localization via a [CrowdIn project](https://crowdin.com/project/image-overlay).  Please help out if you can!
+This fork adds Turkish (tr-TR) localisation. Other translations from the original project are preserved.
 
-### Modders
-Modders (and aspiring modders!), as always I'm available and happy to chat about what I've done and answer any questions, and also about how you can implement anything that I've done for your own mods.  Come grab me on the [Cities Skylines Modding Discord](https://discord.gg/HTav7ARPs2)!
-
-Pull requests welcome! Note that translations should be submitted via CrowdIn (see link above), and not by PR.
+### Original mod
+The original mod is by [algernon-A](https://github.com/algernon-A) and is available on [Paradox Mods](https://mods.paradoxplaza.com/mods/74539/Windows).
+Support for the original mod: [Cities Skylines Modding Discord](https://discord.gg/HTav7ARPs2).
