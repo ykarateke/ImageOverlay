@@ -1,52 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
+	<PropertyGroup>
+		<GamePath Condition="'$(GamePath)'==''">D:\Cities.Skylines.II.Ultimate.Edition.v1.5.6.F1-P2P</GamePath>
+		<ManagedPath Condition="'$(ManagedPath)'==''">$(GamePath)\Cities2_Data\Managed</ManagedPath>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<Reference Include="Game">
+			<HintPath>$(ManagedPath)\Game.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Colossal.AssetPipeline">
+			<HintPath>$(ManagedPath)\Colossal.AssetPipeline.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Colossal.Core">
+			<HintPath>$(ManagedPath)\Colossal.Core.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Colossal.IO.AssetDatabase">
+			<HintPath>$(ManagedPath)\Colossal.IO.AssetDatabase.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Colossal.Localization">
+			<HintPath>$(ManagedPath)\Colossal.Localization.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Colossal.Logging">
+			<HintPath>$(ManagedPath)\Colossal.Logging.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Colossal.Mathematics">
+			<HintPath>$(ManagedPath)\Colossal.Mathematics.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Colossal.Mono.Cecil">
+			<HintPath>$(ManagedPath)\Colossal.Mono.Cecil.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Unity.Burst">
+			<HintPath>$(ManagedPath)\Unity.Burst.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Unity.Collections">
+			<HintPath>$(ManagedPath)\Unity.Collections.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Unity.Entities">
+			<HintPath>$(ManagedPath)\Unity.Entities.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Unity.InputSystem">
+			<HintPath>$(ManagedPath)\Unity.InputSystem.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="Unity.Mathematics">
+			<HintPath>$(ManagedPath)\Unity.Mathematics.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.AssetBundleModule">
+			<HintPath>$(ManagedPath)\UnityEngine.AssetBundleModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.CoreModule">
+			<HintPath>$(ManagedPath)\UnityEngine.CoreModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 		<Reference Include="UnityEngine.ImageConversionModule">
+			<HintPath>$(ManagedPath)\UnityEngine.ImageConversionModule.dll</HintPath>
 			<Private>false</Private>
 		</Reference>
 	</ItemGroup>

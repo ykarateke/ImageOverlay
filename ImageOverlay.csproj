@@ -16,14 +16,20 @@
 	</PropertyGroup>
 
 	<Import Project="Config/References.csproj" />
+	<!-- CSII_TOOLPATH bulunamadığında manuel DLL yolları kullanılır -->
+	<!--
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" />
 	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" />
+	-->
 
-	<ItemGroup>
-		<None Include="$(ModPropsFile)" Link="Properties/Mod.props" />
-		<None Include="$(ModTargetsFile)" Link="Properties/Mod.targets" />
-	</ItemGroup>
-	
+	<PropertyGroup>
+		<GamePath>D:\Cities.Skylines.II.Ultimate.Edition.v1.5.6.F1-P2P</GamePath>
+		<ManagedPath>$(GamePath)\Cities2_Data\Managed</ManagedPath>
+		<AssemblySearchPaths>$(ManagedPath);$(AssemblySearchPaths)</AssemblySearchPaths>
+		<OutputPath>bin\$(Configuration)\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<None Include="Config/References.csproj" />
 	</ItemGroup>
@@ -50,17 +56,22 @@
 		<EmbeddedResource Include="l10n\pl-PL.csv" />
 		<EmbeddedResource Include="l10n\ro-RO.csv" />
 		<EmbeddedResource Include="l10n\sv-SE.csv" />
+		<EmbeddedResource Include="l10n\tr-TR.csv" />
 		<EmbeddedResource Include="l10n\zh-HANS.csv" />
 		<EmbeddedResource Include="l10n\zh-HANT.csv" />
 		<EmbeddedResource Include="Shader\shaderbundle" />
 	</ItemGroup>
 
+	<!--
 	<Target Name="SetDescription" BeforeTargets="BeforeBuild">
 		<XmlPoke XmlInputPath="$(PublishConfigurationPath)" Value="$([System.IO.File]::ReadAllText($(ProjectDir)/Properties/LongDescription.md))" Query="//Publish/LongDescription" />
 		<XmlPoke XmlInputPath="$(PublishConfigurationPath)" Value="$([System.IO.File]::ReadAllText($(ProjectDir)/Properties/LatestChangelog.md))" Query="//Publish/ChangeLog" />
 		<XmlPoke XmlInputPath="$(PublishConfigurationPath)" Value="$(Version)" Query="//Publish/ModVersion/@Value" />
 	</Target>
+	-->
 
+	<!-- Notice ve Cleanup target'ları Mod.targets gerektirir, SDK olmadan devre dışı -->
+	<!--
 	<Target Name="Notice" AfterTargets="AfterBuild">
 		<ItemGroup>
 			<NoticeFiles Include="$(ProjectDir)/NOTICE.txt" />
@@ -75,5 +86,6 @@
 		</ItemGroup>
 		<Delete Files="@(CleanTargets)" />
 	</Target>
+	-->
 
 </Project>

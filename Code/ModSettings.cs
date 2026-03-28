@@ -24,8 +24,8 @@ namespace ImageOverlay
     [FileLocation(Mod.ModName)]
     [SettingsUISection(OverlayTab, KeysTab)]
     [SettingsUITabOrder(OverlayTab, KeysTab)]
-    [SettingsUIGroupOrder(FileSelectionSection, AlphaSection, ToggleSection, ElevationSection, PositionSection, RotationSection, SizeSection)]
-    [SettingsUIShowGroupName(ElevationSection, PositionSection, RotationSection, SizeSection)]
+    [SettingsUIGroupOrder(FileSelectionSection, AlphaSection, ToggleSection, LockSection, ElevationSection, PositionSection, RotationSection, SizeSection)]
+    [SettingsUIShowGroupName(LockSection, ElevationSection, PositionSection, RotationSection, SizeSection)]
     public class ModSettings : ModSetting
     {
         // Layout constants.
@@ -34,6 +34,7 @@ namespace ImageOverlay
         private const string FileSelectionSection = "FileSelection";
         private const string AlphaSection = "FileSelection";
         private const string ToggleSection = "Toggle";
+        private const string LockSection = "OverlayLock";
         private const string ElevationSection = "OverlayElevation";
         private const string PositionSection = "OverlayPosition";
         private const string RotationSection = "OverlayRotation";
@@ -54,6 +55,7 @@ namespace ImageOverlay
         private int _fileListVersion = 0;
 
         // Overlay attributes.
+        private bool _isLocked = false;
         private bool _showThroughTerrain = true;
         private float _overlaySize = VanillaMapSize;
         private float _overlayPosX = 0f;
@@ -121,6 +123,38 @@ namespace ImageOverlay
             set
             {
                 UpdateFileList();
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the overlay position is locked (keyboard shortcuts disabled).
+        /// </summary>
+        [SettingsUISection(OverlayTab, LockSection)]
+        public bool IsLocked
+        {
+            get => _isLocked;
+            set
+            {
+                _isLocked = value;
+                _log.Info($"Overlay lock: {value}");
+            }
+        }
+
+        /// <summary>
+        /// Sets a value indicating whether the overlay should snap to terrain and lock.
+        /// </summary>
+        [SettingsUIButton]
+        [SettingsUISection(OverlayTab, LockSection)]
+        public bool SnapToTerrainAndLock
+        {
+            set
+            {
+                // Elevation offset sıfırla — mesh saf arazi yüksekliğine oturur.
+                OverlayPosY = 0f;
+                IsLocked = true;
+
+                // Mesh'i yenile.
+                ImageOverlaySystem.Instance?.SetPositionY(0f);
             }
         }
 

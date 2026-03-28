@@ -1,4 +1,4 @@
-﻿// <copyright file="ImageOverlaySystem.cs" company="algernon (K. Algernon A. Sheppard)">
+// <copyright file="ImageOverlaySystem.cs" company="algernon (K. Algernon A. Sheppard)">
 // Copyright (c) algernon (K. Algernon A. Sheppard). All rights reserved.
 // Licensed under the Apache Licence, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
 // See LICENSE.txt file in the project root for full license information.
@@ -24,14 +24,18 @@ namespace ImageOverlay
     /// </summary>
     internal sealed partial class ImageOverlaySystem : GameSystemBase
     {
+        // Terrain mesh resolution: arazi uyum kalitesi (yüksek = daha iyi ama daha ağır).
+        private const int TerrainMeshResolution = 64;
+
         // Input actions.
         private readonly List<KeyValuePair<ProxyAction, Action>> _actions = new ();
 
         // References.
         private ILog _log;
 
-        // Texture.
+        // Overlay objects.
         private GameObject _overlayObject;
+        private Mesh _overlayMesh;
         private Material _overlayMaterial;
         private Texture2D _overlayTexture;
         private Shader _overlayShader;
@@ -80,7 +84,6 @@ namespace ImageOverlay
         /// <param name="alpha">Alpha value to set (0f - 1f).</param>
         internal void SetAlpha(float alpha)
         {
-            // Only update if there's an existing overlay object.
             if (_overlayObject)
             {
                 // Invert alpha.
@@ -94,12 +97,9 @@ namespace ImageOverlay
         /// <param name="size">Size per size, in metres.</param>
         internal void SetSize(float size)
         {
-            // Only refresh if there's an existing overlay object.
             if (_overlayObject)
             {
-                // Plane primitive is 10m wide, so divide input size accordingly.
-                float scaledSize = size / 10f;
-                _overlayObject.transform.localScale = new Vector3(scaledSize, 1f, scaledSize);
+                GenerateTerrainMesh();
             }
         }
 
@@ -109,12 +109,9 @@ namespace ImageOverlay
         /// <param name="posX">X position, in metres.</param>
         internal void SetPositionX(float posX)
         {
-            // Only refresh if there's an existing overlay object.
             if (_overlayObject)
             {
-                Vector3 newPos = _overlayObject.transform.position;
-                newPos.x = posX;
-                _overlayObject.transform.position = newPos;
+                GenerateTerrainMesh();
             }
         }
 
@@ -124,12 +121,10 @@ namespace ImageOverlay
         /// <param name="elevation">Elevation, in metres.</param>
         internal void SetPositionY(float elevation)
         {
-            // Only refresh if there's an existing overlay object.
+            // Yükseklik arazi mesh'ine baked edildiğinden sadece mesh'i yeniden oluştur.
             if (_overlayObject)
             {
-                Vector3 newPos = _overlayObject.transform.position;
-                newPos.y = elevation;
-                _overlayObject.transform.position = newPos;
+                GenerateTerrainMesh();
             }
         }
 
@@ -139,12 +134,9 @@ namespace ImageOverlay
         /// <param name="posZ">Z position, in metres.</param>
         internal void SetPositionZ(float posZ)
         {
-            // Only refresh if there's an existing overlay object.
             if (_overlayObject)
             {
-                Vector3 newPos = _overlayObject.transform.position;
-                newPos.z = posZ;
-                _overlayObject.transform.position = newPos;
+                GenerateTerrainMesh();
             }
         }
 
@@ -160,13 +152,14 @@ namespace ImageOverlay
 
         /// <summary>
         /// Updates the overlay's rotation to match current settings.
+        /// Rotation is baked into mesh UVs — no transform rotation needed.
         /// </summary>
         internal void UpdateRotation()
         {
-            // Only refresh if there's an existing overlay object.
             if (_overlayObject)
             {
-                _overlayObject.transform.rotation = Quaternion.Euler(0f, Mod.Instance.ActiveSettings.OverlayRotation + 180, 0f);
+                // Rotasyon UV'lere baked edildiğinden mesh'i yeniden oluştur.
+                GenerateTerrainMesh();
             }
         }
 
@@ -250,14 +243,23 @@ namespace ImageOverlay
         protected override void OnUpdate()
         {
             ModSettings activeSettings = Mod.Instance.ActiveSettings;
+            bool locked = activeSettings.IsLocked;
 
             foreach (KeyValuePair<ProxyAction, Action> entry in _actions)
             {
-                if (entry.Key.WasPerformedThisFrame())
+                if (!entry.Key.WasPerformedThisFrame())
                 {
-                    _log.Info($"Performing action {entry.Key.name}");
-                    entry.Value();
+                    continue;
                 }
+
+                // Kilitli modda toggle (aç/kapat) hariç tüm kısayollar devre dışı.
+                if (locked && entry.Key.name != ToggleAction)
+                {
+                    continue;
+                }
+
+                _log.Info($"Performing action {entry.Key.name}");
+                entry.Value();
             }
         }
 
@@ -357,36 +359,120 @@ namespace ImageOverlay
             // Dispose of any existing objects.
             DestroyObjects();
 
-            // Load image texture.
             try
             {
-                // Load texture.
+                // Texture ve materyali yükle.
                 UpdateOverlayTexture();
 
-                // Create basic plane.
-                _overlayObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                // Boş GameObject oluştur, MeshFilter ve MeshRenderer ekle.
+                _overlayObject = new GameObject("ImageOverlay_TerrainMesh");
+                _overlayObject.AddComponent<MeshFilter>();
+                _overlayObject.AddComponent<MeshRenderer>();
 
-                // Apply scale.
-                SetSize(Mod.Instance.ActiveSettings.OverlaySize);
+                // Mesh nesnesini oluştur ve MeshFilter'a bağla.
+                _overlayMesh = new Mesh();
+                _overlayMesh.name = "ImageOverlay_Mesh";
+                _overlayMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+                _overlayObject.GetComponent<MeshFilter>().mesh = _overlayMesh;
 
-                // Set overlay elevation.
-                ResetElevation();
-                TerrainHeightData terrainHeight = World.GetOrCreateSystemManaged<TerrainSystem>().GetHeightData();
-                WaterSurfaceData<SurfaceWater> waterSurface = World.GetOrCreateSystemManaged<WaterSystem>().GetSurfaceData(out _);
-                _log.Info($"terrain height is {WaterUtils.SampleHeight(ref waterSurface, ref terrainHeight, float3.zero)}");
-                _overlayObject.transform.position = new Vector3(Mod.Instance.ActiveSettings.OverlayPosX, Mod.Instance.ActiveSettings.OverlayPosY, Mod.Instance.ActiveSettings.OverlayPosZ);
+                // Araziye uyan mesh'i oluştur.
+                GenerateTerrainMesh();
 
-                // Apply rotation.
-                UpdateRotation();
-
-                // Attach material to GameObject.
+                // Materyali uygula.
                 _overlayObject.GetComponent<Renderer>().material = _overlayMaterial;
                 SetAlpha(Mod.Instance.ActiveSettings.Alpha);
+
+                _log.Info("Terrain-conforming overlay mesh oluşturuldu.");
             }
             catch (Exception e)
             {
                 _log.Error(e, "exception loading image overlay file");
             }
+        }
+
+        /// <summary>
+        /// Generates (or regenerates) a terrain-conforming mesh.
+        /// Arazi yüksekliklerini örnekler ve görüntüyü yüzeye yapıştırır.
+        /// Vertex'ler local space'de üretilir (precision kayması önlenir).
+        /// </summary>
+        private void GenerateTerrainMesh()
+        {
+            if (_overlayMesh == null)
+            {
+                return;
+            }
+
+            float size = Mod.Instance.ActiveSettings.OverlaySize;
+            float cx = Mod.Instance.ActiveSettings.OverlayPosX;
+            float cz = Mod.Instance.ActiveSettings.OverlayPosZ;
+            float elevationOffset = Mod.Instance.ActiveSettings.IsLocked ? 0f : Mod.Instance.ActiveSettings.OverlayPosY;
+
+            // GameObject'i overlay merkezine taşı — vertex'ler local space'de kalacak.
+            // Büyük dünya koordinatlarının float precision kaybını (kamera kayması) önler.
+            _overlayObject.transform.position = new Vector3(cx, 0f, cz);
+
+            int res = TerrainMeshResolution;
+            int vCount = res + 1;
+
+            Vector3[] vertices = new Vector3[vCount * vCount];
+            Vector2[] uvs = new Vector2[vCount * vCount];
+            int[] triangles = new int[res * res * 6];
+
+            TerrainHeightData heightData = World.GetOrCreateSystemManaged<TerrainSystem>().GetHeightData();
+            WaterSurfaceData<SurfaceWater> waterSurface = World.GetOrCreateSystemManaged<WaterSystem>().GetSurfaceData(out _);
+
+            float halfSize = size * 0.5f;
+            float step = size / res;
+
+            // Rotasyonu UV'lere bake et.
+            float rotRad = Mod.Instance.ActiveSettings.OverlayRotation * Mathf.Deg2Rad;
+            float cosR = Mathf.Cos(rotRad);
+            float sinR = Mathf.Sin(rotRad);
+
+            for (int zi = 0; zi <= res; zi++)
+            {
+                for (int xi = 0; xi <= res; xi++)
+                {
+                    int i = (zi * vCount) + xi;
+
+                    // Dünya koordinatı (height sampling için).
+                    float wx = cx - halfSize + (xi * step);
+                    float wz = cz - halfSize + (zi * step);
+
+                    // Arazi yüksekliği + offset. Local space için merkez çıkarılır.
+                    float wy = WaterUtils.SampleHeight(ref waterSurface, ref heightData, new float3(wx, 0f, wz)) + elevationOffset + 0.5f;
+
+                    // LOCAL space vertex (dünya koordinatından merkez çıkarılır — precision fix).
+                    vertices[i] = new Vector3(wx - cx, wy, wz - cz);
+
+                    // UV koordinatları: ortalanmış UV + rotasyon.
+                    float u = ((float)xi / res) - 0.5f;
+                    float v = ((float)zi / res) - 0.5f;
+                    uvs[i] = new Vector2((u * cosR) - (v * sinR) + 0.5f, (u * sinR) + (v * cosR) + 0.5f);
+                }
+            }
+
+            int tri = 0;
+            for (int zi = 0; zi < res; zi++)
+            {
+                for (int xi = 0; xi < res; xi++)
+                {
+                    int i = (zi * vCount) + xi;
+                    triangles[tri++] = i;
+                    triangles[tri++] = i + vCount;
+                    triangles[tri++] = i + vCount + 1;
+                    triangles[tri++] = i;
+                    triangles[tri++] = i + vCount + 1;
+                    triangles[tri++] = i + 1;
+                }
+            }
+
+            _overlayMesh.Clear();
+            _overlayMesh.vertices = vertices;
+            _overlayMesh.uv = uvs;
+            _overlayMesh.triangles = triangles;
+            _overlayMesh.RecalculateNormals();
+            _overlayMesh.RecalculateBounds();
         }
 
         /// <summary>
@@ -441,6 +527,14 @@ namespace ImageOverlay
                 _log.Info("destroying existing overlay material");
                 UnityEngine.Object.DestroyImmediate(_overlayMaterial);
                 _overlayMaterial = null;
+            }
+
+            // Overlay mesh.
+            if (_overlayMesh)
+            {
+                _log.Info("destroying existing overlay mesh");
+                UnityEngine.Object.DestroyImmediate(_overlayMesh);
+                _overlayMesh = null;
             }
 
             // GameObject.
